@@ -179,6 +179,6 @@ def sorted_messages(mess_list_in, query_in):
         mess_score_list.append((message, mess_score))
     
     # Sort mess_score_list
-    mess_score_list.sort(key=lambda x:x[1])
+    mess_score_list.sort(key=lambda x:x[1], reverse=True)
 
     return mess_score_list
