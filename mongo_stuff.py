@@ -1,9 +1,3 @@
-## GRPC For recieving message and search query can be put in main file
-
-## can all put our parts in seperate files and  import to main
-
-## GRPC will also need to be added into scalica to send the message and eventually search query to us
-
 import pymongo
 from datetime import datetime
 import tokenizeMsg
@@ -67,6 +61,7 @@ def serialize_message_to_word(message):
             }
             word_col.insert_one(to_insert)
 
+
 def insert_message(request):
     message = {
         "message_id": message_col.count_documents({}),
@@ -77,16 +72,6 @@ def insert_message(request):
     message_col.insert_one(message)
     return message
 
-# message = {
-#     "message_id": message_col.count_documents({}),
-#     "username": "test",
-#     "content": "This is a post on Twitter, I mean Scalica",
-#     "datePosted": datetime.now()
-# }
-
-# # message_col.insert_one(message)
-# insert_message(message)
-# serialize_message_to_word(message)
 
 '''
 This function will return the message ids of the scalica messages from a query
@@ -138,21 +123,39 @@ def search_get_messages(query):
 
 
 ########################## SCORING STUFF ########################
+'''
+Function to calcuate the tf_idf of one word for a specific message. 
+
+@param mess_in - message
+@param word_in - word 
+@param mess_count_in - total # of messages in database
+@param word_doc_count_in - # of documents that contain the word
+@return - float tf_idf score. 
+'''
 def get_tf_idf(mess_in, word_in, mess_count_in, word_doc_count_in):
-    # Split message into lists of words. 
-    mess_list = list(tokenizeMsg.tokenizeMsg(mess_in).keys())
+    # Tokenize message and get length. 
+    mess_dict = tokenizeMsg.tokenizeMsg(mess_in)
+    mess_len = len(mess_in.split(' '))
     # Calculate tf = term frequency = (# times word occurs in message) / (# words in message).
-    tf = mess_list.count(word_in) / len(mess_list)
+    tf =0
+    if word_in in mess_dict.keys():
+        tf = len(mess_dict[word_in]) / mess_len 
     # Calculate idf = inverse document frequency = log(# messages / # messages containing word).
     # mess_count -> from message_sort()
     # word_doc_count -> from message_sort()
     idf = math.log(mess_count_in / word_doc_count_in)
-    
     # Calculate td_idf : (tf * idf)
     tf_idf = tf * idf
     return tf_idf
 
 
+'''
+Function to create a list of messages sorted (Greatest to Least by TF_IDF score)
+
+@param mess_list_in - list of messages that contain at least one of the words from the query.
+@param query_in - String that contains the user inputted query. 
+@return - list of tuples (message, tf_idf score) -> sorted greatest to least by tf_idf score. 
+'''
 def sorted_messages(mess_list_in, query_in):
     mess_score_list = [] # List with (message_id, score)
     mess_count = message_col.count_documents({}) # Count of all messages. 
